@@ -1,0 +1,44 @@
+{
+     "Parameters" : {
+
+    "Email" : {
+        "Description" : "Enter email Id in comma seperated list eg k@gmail.com,
+      "Type" : "String"
+    }
+},
+"Resources" : {
+
+    "LambdaFunction2": {
+
+        "Type": "AWS::Lambda::Function",
+        "Properties": {
+            "FunctionName": "EmailTrigger",
+            "Code": {
+                "ZipFile": "import boto3,os\n\ndef lambda_handler(event, context):\n    letter_list = os.environ['MY_ENV_VAR'].split(\",\")\n    for i in letter_list:\n        ses = boto3.client('ses')\n        response = ses.verify_email_identity(EmailAddress = i)\n        print(response)\n"
+            },
+            "Environment":{  
+                "Variables":{  
+                   "MY_ENV_VAR":{  
+                      "Ref":"Email"
+                   }
+                }
+             },
+            "Handler": "index.lambda_handler",
+            "Role": "arn:aws:iam::729818509590:role/service-role/test-role-4cbkmiz5",
+            "Runtime": "python3.8",
+            "Timeout": 60
+        }
+    },
+    "Primerinvoke": {
+        "Type": "AWS::CloudFormation::CustomResource",
+        "DependsOn": "LambdaFunction2",
+        "Version": "1.0",
+        "Properties": {
+            "ServiceToken": {
+                "Fn::GetAtt": [
+                    "LambdaFunction2",
+                    "Arn"
+                ]
+            }
+        }
+    }
